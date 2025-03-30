@@ -175,4 +175,4 @@ cython_debug/
 
 data/
 *.parquet
-formation_dbt/output/transformed_data.db
+output/
