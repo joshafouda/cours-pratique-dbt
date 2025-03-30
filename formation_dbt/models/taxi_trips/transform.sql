@@ -1,3 +1,9 @@
+{{ config(
+    materialized='external',
+    location='output/trips_2024_transformed.parquet',
+    format='parquet'
+) }}
+
 WITH source_data AS (
     SELECT * EXCLUDE (VendorID, RatecodeID) 
     FROM {{ source('tlc_taxi_trips', 'raw_yellow_tripdata') }}
@@ -22,14 +28,26 @@ transformed_data AS (
 
         CASE 
             WHEN payment_type = 1 THEN 'Credit card'
-            WHEN payment_type = 2 THEN 'cash'
+            WHEN payment_type = 2 THEN 'Cash'
         END AS payment_method,
 
         DATE_DIFF('minute', tpep_pickup_datetime, tpep_dropoff_datetime) AS trip_duration_minutes,
 
         * EXCLUDE (passenger_count, payment_type)
     FROM filtered_data
+),
+
+final_data AS (
+    SELECT *,
+        CAST(tpep_pickup_datetime AS DATE) AS pickup_date,
+        CAST(tpep_dropoff_datetime AS DATE) AS dropoff_date
+    FROM transformed_data
+    WHERE 
+        pickup_date >= '2024-01-01' AND pickup_date < '2025-01-01'
+        AND dropoff_date >= '2024-01-01' AND dropoff_date < '2025-01-01'
+        
 )
 
-SELECT * FROM transformed_data
+SELECT * EXCLUDE (pickup_date, dropoff_date)
+FROM final_data
 WHERE trip_duration_minutes > 0

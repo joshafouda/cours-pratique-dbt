@@ -1,21 +1,49 @@
-
 version: 2
 
 models:
-  - name: my_first_dbt_model
-    description: "A starter dbt model"
+  - name: transform
+    description: "Dataset des trajets en taxi jaune de New York au cours de l'année 2024."
     columns:
-      - name: id
-        description: "The primary key for this table"
-        data_tests:
-          - unique
+      - name: tpep_pickup_datetime
+        description: "The date and time when the meter was engaged."
+        tests:
           - not_null
 
-  - name: my_second_dbt_model
-    description: "A starter dbt model"
-    columns:
-      - name: id
-        description: "The primary key for this table"
-        data_tests:
-          - unique
+      - name: tpep_dropoff_datetime
+        description: "The date and time when the meter was disengaged."
+        tests:
           - not_null
+
+      - name: trip_duration_minutes
+        description: "The duration of the trip in minutes."
+        tests:
+          - not_null
+
+      - name: trip_distance
+        description: "The trip distance in miles."
+        tests:
+          - not_null
+
+      - name: passenger_count
+        description: "The number of passengers in the vehicle."
+        tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 1
+          -  dbt_expectations.expect_column_values_to_be_of_type:
+              column_type: BIGINT
+              
+
+      - name: payment_method
+        description: "Translated payment method."
+        tests:
+          - not_null
+          - accepted_values:
+              values: ["Credit card", "Cash"]
+
+      - name: store_and_fwd_flag
+        description: "Indicates whether the trip record was stored in vehicle memory before sending to the vendor."
+        tests:
+          - not_null
+          - accepted_values:
+              values: ["N"]
